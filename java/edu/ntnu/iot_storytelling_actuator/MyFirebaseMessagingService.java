@@ -37,6 +37,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+        messageBody = messageBody.replace("\"", "");
+        messageBody = messageBody.replace("'", "\"");
+        messageBody = messageBody.replaceFirst("b", "");
         intent.putExtra("message", messageBody);
         startActivity(intent);
        /* int uniqueInt = (int) (System.currentTimeMillis() & 0xff);

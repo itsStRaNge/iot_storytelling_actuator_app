@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
     protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
+        setIntent(i);
         handleServerData();
     }
 
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             Intent i = getIntent();
             String json_str = i.getStringExtra("message");
+            Log.d("Debug", json_str);
             JSONObject json = new JSONObject(json_str);
 
             if(json.has("audio")) {
