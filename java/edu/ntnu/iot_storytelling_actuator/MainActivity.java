@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     public static final String DEVICE_NAME = "Actuator1";
     public static final String HOST_KEY = "Host";
     public static final String HOST_IP_KEY = "ip";
-    public static final String HOST_PORT_KEY = "port";
+    public static final String HOST_PORT_KEY = "http_port";
     public static final String AUDIO_Key = "audio";
     public static final String IMAGE_Key = "image";
 
@@ -48,11 +48,8 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
         DatabaseReference m_Database = FirebaseDatabase.getInstance().getReference();
         DatabaseReference host = m_Database.child(HOST_KEY);
         host.addValueEventListener(this);
-        DatabaseReference audio = m_Database.child(DEVICE_NAME).child(AUDIO_Key);
-        audio.addValueEventListener(this);
-        DatabaseReference image = m_Database.child(DEVICE_NAME).child(IMAGE_Key);
-        image.addValueEventListener(this);
-
+        DatabaseReference device = m_Database.child(DEVICE_NAME);
+        device.addValueEventListener(this);
     }
 
     private void playAudio(String file){
@@ -86,20 +83,16 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                 case HOST_KEY: {
                     m_host_ip = dataSnapshot.child(HOST_IP_KEY).getValue(String.class);
                     m_host_port = dataSnapshot.child(HOST_PORT_KEY).getValue(Integer.class);
-                    Log.d("Firebase", m_host_ip);
-                    Log.d("Firebase", String.valueOf(m_host_port));
+                    Log.d("Firebase", m_host_ip + ":" + String.valueOf(m_host_port));
                     break;
                 }
-                case AUDIO_Key: {
-                    String file = dataSnapshot.getValue(String.class);
-                    Log.d("Firebase", file);
-                    //playAudio(file);
-                    break;
-                }
-                case IMAGE_Key: {
-                    String file = dataSnapshot.getValue(String.class);
-                    Log.d("Firebase", file);
-                    //showImage(file);
+                case DEVICE_NAME:{
+                    Log.d("Firebase", "Update Image/Sound");
+                    String audio_file = dataSnapshot.child(AUDIO_Key).getValue(String.class);
+                    String image_file = dataSnapshot.child(IMAGE_Key).getValue(String.class);
+
+                    showImage(image_file);
+                    playAudio(audio_file);
                     break;
                 }
             }
@@ -125,9 +118,6 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                 e.printStackTrace();
                 return null;
             }
-        }
-
-        protected void onProgressUpdate(Integer... progress) {
         }
 
         protected void onPostExecute(Bitmap bit) {
