@@ -1,9 +1,6 @@
 package edu.ntnu.iot_storytelling_actuator;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
@@ -14,88 +11,111 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
+import java.net.MalformedURLException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ValueEventListener{
+    public static final String DEVICE_NAME = "Actuator1";
+    public static final String HOST_KEY = "Host";
+    public static final String HOST_IP_KEY = "ip";
+    public static final String HOST_PORT_KEY = "port";
+    public static final String AUDIO_Key = "audio";
+    public static final String IMAGE_Key = "image";
+
+    private String m_host_ip = "";
+    private Integer m_host_port = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FirebaseMessaging.getInstance().subscribeToTopic("news")
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (!task.isSuccessful()) {
-                            Log.d("Debug", "Cannot subscribe to topic");
-                        }
-                    }
-                });
+        DatabaseReference m_Database = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference host = m_Database.child(HOST_KEY);
+        host.addValueEventListener(this);
+        DatabaseReference audio = m_Database.child(DEVICE_NAME).child(AUDIO_Key);
+        audio.addValueEventListener(this);
+        DatabaseReference image = m_Database.child(DEVICE_NAME).child(IMAGE_Key);
+        image.addValueEventListener(this);
 
-        handleServerData();
-    }
-    protected void onNewIntent(Intent i) {
-        super.onNewIntent(i);
-        setIntent(i);
-        handleServerData();
     }
 
-    public void handleServerData() {
+    private void playAudio(String file){
         try {
-            Intent i = getIntent();
-            String json_str = i.getStringExtra("message");
-            Log.d("Debug", json_str);
-            JSONObject json = new JSONObject(json_str);
+            java.net.URL url = new java.net.URL("http",m_host_ip, m_host_port, "audio/" + file);
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.setDataSource(url.toString());
+            mediaPlayer.prepare(); // might take long! (for buffering, etc)
+            mediaPlayer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-            if(json.has("audio")) {
-                try {
-                    String url =json.getString("audio");
-                    MediaPlayer mediaPlayer = new MediaPlayer();
-                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                    mediaPlayer.setDataSource(url);
-                    mediaPlayer.prepare(); // might take long! (for buffering, etc)
-                    mediaPlayer.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
+    private void showImage(String file){
+        try {
+            java.net.URL url = new java.net.URL("http",m_host_ip, m_host_port, "image/" + file);
+            new ImageRequest().execute(url);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        String key = dataSnapshot.getKey();
+
+        if (key != null) {
+            switch (key) {
+                case HOST_KEY: {
+                    m_host_ip = dataSnapshot.child(HOST_IP_KEY).getValue(String.class);
+                    m_host_port = dataSnapshot.child(HOST_PORT_KEY).getValue(Integer.class);
+                    Log.d("Firebase", m_host_ip);
+                    Log.d("Firebase", String.valueOf(m_host_port));
+                    break;
+                }
+                case AUDIO_Key: {
+                    String file = dataSnapshot.getValue(String.class);
+                    Log.d("Firebase", file);
+                    //playAudio(file);
+                    break;
+                }
+                case IMAGE_Key: {
+                    String file = dataSnapshot.getValue(String.class);
+                    Log.d("Firebase", file);
+                    //showImage(file);
+                    break;
                 }
             }
-
-            if(json.has("image")) {
-                new ImageRequest().execute(json.getString("image"));
-            }
-
-
-        } catch (NullPointerException e) {
-            Log.e("Error", "NullPointerException");
-        } catch (JSONException e) {
-            Log.e("Error", "JSON Exception");
         }
-
     }
 
-    private class ImageRequest  extends AsyncTask<String, Integer, Bitmap> {
+    @Override
+    public void onCancelled(@NonNull DatabaseError databaseError) {
+        Log.w("Error", "loadPost:onCancelled", databaseError.toException());
+    }
 
-        protected Bitmap doInBackground(String... urls) {
+    private class ImageRequest  extends AsyncTask<java.net.URL, Integer, Bitmap> {
+
+        protected Bitmap doInBackground(java.net.URL... urls) {
             try {
-                java.net.URL url = new java.net.URL(urls[0]);
-                HttpURLConnection connection = (HttpURLConnection) url
+                HttpURLConnection connection = (HttpURLConnection) urls[0]
                         .openConnection();
                 connection.setDoInput(true);
                 connection.connect();
