@@ -1,11 +1,13 @@
 package edu.ntnu.iot_storytelling_actuator;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,16 +20,21 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ValueEventListener{
     public static final String DEVICE_NAME = "Actuator1";
@@ -35,10 +42,12 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     public static final String HOST_IP_KEY = "ip";
     public static final String HOST_PORT_KEY = "http_port";
     public static final String AUDIO_Key = "audio";
-    public static final String IMAGE_Key = "image";
+    public static final String IMAGE_Key = "image";;
+    public static final String SRC_AUDIO_Key = "Audio";
+    public static final String SRC_IMAGE_Key = "Images";
 
-    private String m_host_ip = "";
-    private Integer m_host_port = 0;
+    public static String m_host_ip = "";
+    public static Integer m_host_port = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,19 +68,18 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mediaPlayer.setDataSource(url.toString());
             mediaPlayer.prepare(); // might take long! (for buffering, etc)
+            mediaPlayer.
             mediaPlayer.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void showImage(String file){
-        try {
-            java.net.URL url = new java.net.URL("http",m_host_ip, m_host_port, "image/" + file);
-            new ImageRequest().execute(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+    private void showImage(String file_name){
+        File directory = this.getFilesDir();
+        File file = new File(directory, file_name);
+        Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+        ((ImageView) findViewById(R.id.image_view)).setImageBitmap(bitmap);
     }
 
     @Override
@@ -83,16 +91,21 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                 case HOST_KEY: {
                     m_host_ip = dataSnapshot.child(HOST_IP_KEY).getValue(String.class);
                     m_host_port = dataSnapshot.child(HOST_PORT_KEY).getValue(Integer.class);
-                    Log.d("Firebase", m_host_ip + ":" + String.valueOf(m_host_port));
+
+                    ArrayList<String> audio_files =
+                            (ArrayList<String>) dataSnapshot.child(SRC_AUDIO_Key).getValue();
+                    ArrayList<String> image_files =
+                            (ArrayList<String>) dataSnapshot.child(SRC_IMAGE_Key).getValue();
+
+                    new ImageDownloader(this).execute(image_files);
                     break;
                 }
                 case DEVICE_NAME:{
                     Log.d("Firebase", "Update Image/Sound");
                     String audio_file = dataSnapshot.child(AUDIO_Key).getValue(String.class);
                     String image_file = dataSnapshot.child(IMAGE_Key).getValue(String.class);
-
                     showImage(image_file);
-                    playAudio(audio_file);
+                    //playAudio(audio_file);
                     break;
                 }
             }
@@ -102,27 +115,5 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     @Override
     public void onCancelled(@NonNull DatabaseError databaseError) {
         Log.w("Error", "loadPost:onCancelled", databaseError.toException());
-    }
-
-    private class ImageRequest  extends AsyncTask<java.net.URL, Integer, Bitmap> {
-
-        protected Bitmap doInBackground(java.net.URL... urls) {
-            try {
-                HttpURLConnection connection = (HttpURLConnection) urls[0]
-                        .openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                InputStream input = connection.getInputStream();
-                return BitmapFactory.decodeStream(input);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        protected void onPostExecute(Bitmap bit) {
-            if(bit != null)
-                ((ImageView) findViewById(R.id.image_view)).setImageBitmap(bit);
-        }
     }
 }
