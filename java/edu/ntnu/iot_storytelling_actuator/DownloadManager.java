@@ -12,12 +12,14 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
-public class AudioDownloader extends AsyncTask<ArrayList, Integer, Void> {
+public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
 
     private Context m_context;
+    private String m_tag;
 
-    public AudioDownloader(Context context){
+    public DownloadManager(Context context, String tag){
         m_context = context;
+        m_tag = tag;
     }
 
     protected Void doInBackground(ArrayList... lists) {
@@ -29,25 +31,24 @@ public class AudioDownloader extends AsyncTask<ArrayList, Integer, Void> {
                 // download file
                 java.net.URL url = new java.net.URL("http",
                         MainActivity.m_host_ip, MainActivity.m_host_port,
-                        "audio/" + file_name);
+                        m_tag + "/" + file_name);
                 HttpURLConnection connection = (HttpURLConnection) url
                         .openConnection();
                 connection.setDoInput(true);
                 connection.connect();
 
-                // get file content
+                // get file content and save it
                 InputStream input = connection.getInputStream();
-                byte[] buffer = new byte[input.available()];
-                input.read(buffer);
+                FileOutputStream out;
+                out = m_context.openFileOutput(file_name, Context.MODE_PRIVATE);
 
-                // save file
-                try {
-                    FileOutputStream out;
-                    out = m_context.openFileOutput(file_name, Context.MODE_PRIVATE);
-                    out.write(buffer);
-                    out.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                switch(m_tag){
+                    case MainActivity.AUDIO_Key:
+                        break;
+                    case MainActivity.IMAGE_Key:
+                        Bitmap bitmap = BitmapFactory.decodeStream(input);
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                        break;
                 }
 
                 // publish progress
@@ -60,7 +61,7 @@ public class AudioDownloader extends AsyncTask<ArrayList, Integer, Void> {
     }
 
     protected void onProgressUpdate(Integer... progress) {
-        Log.d("Download", String.valueOf(progress[0]) + "%");
+        Log.d("Download", m_tag + ": " + String.valueOf(progress[0]) + "%");
     }
 
     protected void onPostExecute(Void...  p) {
