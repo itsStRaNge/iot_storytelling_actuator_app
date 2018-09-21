@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
         String audio_file = state.child(AUDIO_Key).getValue(String.class);
         String image_file = state.child(IMAGE_Key).getValue(String.class);
         showImage(image_file);
-        //playAudio(audio_file);
+        playAudio(audio_file);
     }
 
     @Override
@@ -90,8 +90,8 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                     ArrayList<String> image_files =
                             (ArrayList<String>) dataSnapshot.child(SRC_IMAGE_Key).getValue();
 
-                    new DownloadManager(this, IMAGE_Key).execute(image_files);
-                    //new DownloadManager(this, AUDIO_Key).execute(audio_files);
+                    //new DownloadManager(this, IMAGE_Key).execute(image_files);
+                    new DownloadManager(this, AUDIO_Key).execute(audio_files);
                     break;
                 }
                 case DEVICE_NUMBER:{

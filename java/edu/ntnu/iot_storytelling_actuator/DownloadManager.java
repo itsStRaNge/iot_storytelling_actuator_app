@@ -44,6 +44,11 @@ public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
 
                 switch(m_tag){
                     case MainActivity.AUDIO_Key:
+                        byte data[] = new byte[1024];
+                        int count;
+                        while ((count = input.read(data)) != -1) {
+                            out.write(data, 0, count);
+                        }
                         break;
                     case MainActivity.IMAGE_Key:
                         Bitmap bitmap = BitmapFactory.decodeStream(input);
@@ -51,7 +56,11 @@ public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
                         break;
                 }
 
-                // publish progress
+                out.flush();
+                out.close();
+                input.close();
+
+                // publish file progress
                 publishProgress((int) ((i+1 / (float) files.size()) * 100));
             }
         } catch (IOException e) {
