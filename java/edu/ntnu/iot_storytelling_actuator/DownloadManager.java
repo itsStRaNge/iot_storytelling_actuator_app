@@ -43,17 +43,27 @@ public class DownloadManager extends AsyncTask<ArrayList, String, Void> {
                 out = m_context.openFileOutput(file_name, Context.MODE_PRIVATE);
 
                 switch(m_tag){
-                    case MainActivity.AUDIO_Key:
+                    case MainActivity.AUDIO_Key: {
                         byte data[] = new byte[1024];
                         int count;
                         while ((count = input.read(data)) != -1) {
                             out.write(data, 0, count);
                         }
                         break;
-                    case MainActivity.IMAGE_Key:
+                    }
+                    case MainActivity.IMAGE_Key: {
                         Bitmap bitmap = BitmapFactory.decodeStream(input);
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                         break;
+                    }
+                    case MainActivity.TEXT_Key: {
+                        byte data[] = new byte[1024];
+                        int count;
+                        while ((count = input.read(data)) != -1) {
+                            out.write(data, 0, count);
+                        }
+                        break;
+                    }
                 }
 
                 out.flush();
