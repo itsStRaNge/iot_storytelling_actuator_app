@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
-public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
+public class DownloadManager extends AsyncTask<ArrayList, String, Void> {
 
     private Context m_context;
     private String m_tag;
@@ -61,7 +61,7 @@ public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
                 input.close();
 
                 // publish file progress
-                publishProgress((int) ((i+1 / (float) files.size()) * 100));
+                publishProgress(file_name);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,8 +69,8 @@ public class DownloadManager extends AsyncTask<ArrayList, Integer, Void> {
         return null;
     }
 
-    protected void onProgressUpdate(Integer... progress) {
-        Log.d("Download", m_tag + ": " + String.valueOf(progress[0]) + "%");
+    protected void onProgressUpdate(String... progress) {
+        Log.d("Download", m_tag + ": " + progress[0]);
     }
 
     protected void onPostExecute(Void...  p) {

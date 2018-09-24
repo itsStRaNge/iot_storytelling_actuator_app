@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
 
             MediaPlayer mediaPlayer = new MediaPlayer();
             mediaPlayer.setDataSource(file.getPath());
-            mediaPlayer.prepare(); // might take long! (for buffering, etc)
+            mediaPlayer.prepare();
             mediaPlayer.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,6 +71,9 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     public void updateState(DataSnapshot state){
         String audio_file = state.child(AUDIO_Key).getValue(String.class);
         String image_file = state.child(IMAGE_Key).getValue(String.class);
+
+        Log.d("Debug", "update State: " + audio_file + " - " + image_file);
+
         showImage(image_file);
         playAudio(audio_file);
     }
@@ -90,7 +93,9 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
                     ArrayList<String> image_files =
                             (ArrayList<String>) dataSnapshot.child(SRC_IMAGE_Key).getValue();
 
-                    //new DownloadManager(this, IMAGE_Key).execute(image_files);
+                    deleteCache();
+
+                    new DownloadManager(this, IMAGE_Key).execute(image_files);
                     new DownloadManager(this, AUDIO_Key).execute(audio_files);
                     break;
                 }
@@ -105,5 +110,29 @@ public class MainActivity extends AppCompatActivity implements ValueEventListene
     @Override
     public void onCancelled(@NonNull DatabaseError databaseError) {
         Log.w("Error", "loadPost:onCancelled", databaseError.toException());
+    }
+
+    public void deleteCache() {
+        try {
+            File dir = getCacheDir();
+            deleteDir(dir);
+        } catch (Exception e) { e.printStackTrace();}
+    }
+
+    public static boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+            return dir.delete();
+        } else if(dir!= null && dir.isFile()) {
+            return dir.delete();
+        } else {
+            return false;
+        }
     }
 }
