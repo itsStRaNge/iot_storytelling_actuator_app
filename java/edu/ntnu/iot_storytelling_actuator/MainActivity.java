@@ -13,8 +13,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import edu.ntnu.iot_storytelling_actuator.Network.FirebaseManager;
-
 
 public class MainActivity extends AppCompatActivity{
     @Override
