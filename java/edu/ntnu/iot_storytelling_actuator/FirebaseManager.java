@@ -30,7 +30,7 @@ public class FirebaseManager implements ValueEventListener {
 
     private MainActivity m_context;
 
-    FirebaseManager(MainActivity context){
+    public FirebaseManager(MainActivity context){
         m_context = context;
         DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         DatabaseReference host = database.child(HOST_KEY);
