@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,9 +22,12 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
 
-    private int m_num_down_finish=0;
     private boolean DATA_SYNCED=false;
     private MediaPlayer m_mediaPlayer;
+
+    public ProgressBar m_progress_bar;
+    public TextView m_progress_text;
+    public LinearLayout m_progess_layout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +35,10 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         m_mediaPlayer = new MediaPlayer();
+
+        m_progress_bar = findViewById(R.id.progress_bar);
+        m_progress_text = findViewById(R.id.progress_text);
+        m_progess_layout = findViewById(R.id.progress_layout);
 
         new FirebaseManager(this);
     }
@@ -97,19 +106,20 @@ public class MainActivity extends AppCompatActivity{
 
     public void download_finished(Boolean success){
         if (success){
-            m_num_down_finish++;
-
-            if(m_num_down_finish >=3){
-                m_num_down_finish=0;
-                findViewById(R.id.download_progress_bar).setVisibility(View.INVISIBLE);
-                DATA_SYNCED = true;
-                Toast.makeText(getApplicationContext(), "Data sync complete!",
-                        Toast.LENGTH_LONG).show();
-            }
+            DATA_SYNCED = true;
+            Toast.makeText(getApplicationContext(), "Data sync complete!",
+                    Toast.LENGTH_LONG).show();
         }else{
             Toast.makeText(getApplicationContext(), "Failed to Download Components",
                     Toast.LENGTH_LONG).show();
         }
     }
 
+    public boolean data_synced(){
+        if(!DATA_SYNCED){
+            Toast.makeText(getApplicationContext(), "Data not synchronized!",
+                    Toast.LENGTH_LONG).show();
+        }
+        return DATA_SYNCED;
+    }
 }
